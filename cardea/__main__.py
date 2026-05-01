@@ -5,9 +5,12 @@ from cardea.lexer import lexer
 from cardea.parser import parser
 from cardea.emitter import emitter
 
+# cardea main
+# made by las-r on github
+
 def main():
     # parse args
-    if len(sys.argv) >= 1:
+    if len(sys.argv) > 1:
         filename = sys.argv[1]
     else:
         print("usage: cardea <filename.car>")
@@ -18,20 +21,32 @@ def main():
         with open(filename) as file:
             source = file.read()
     except FileNotFoundError:
-        print(f"error: file '{filename}' not found")
+        print(f"file error: file {filename} not found")
         return
 
     # lex
-    l = lexer(source)
-    tokens = l.tokenize()
+    try:
+        l = lexer(source)
+        tokens = l.tokenize()
+    except Exception as e:
+        print(f"lexer error: {e}")
+        return
 
     # parse
-    p = parser(tokens)
-    ast = p.parse()
+    try:
+        p = parser(tokens)
+        ast = p.parse()
+    except Exception as e:
+        print(f"parser error: {e}")
+        return
 
     # emit
-    e = emitter()
-    ccode = e.emit(ast)
+    try:
+        e = emitter()
+        ccode = e.emit(ast)
+    except Exception as e:
+        print(f"emitter error: {e}")
+        return
 
     # build
     if not os.path.exists("carbuild"):
@@ -39,12 +54,12 @@ def main():
     with open("carbuild/out.c", "w") as f:
         f.write(ccode)
     try:
-        subprocess.run(["gcc", "build/out.c", "-o", "build/out"], check=True)
-        print("compilation successful!")
+        subprocess.run(["gcc", "carbuild/out.c", "-o", "carbuild/out"], check=True)
+        print("build successful!")
     except FileNotFoundError:
-        print("error: gcc not found. please install mingw or w64devkit.")
+        print("build error: gcc not found. please install mingw or w64devkit.")
     except subprocess.CalledProcessError:
-        print("error: gcc found but failed to compile the code.")
+        print("build error: gcc found but failed to compile the code.")
         
 if __name__ == "__main__":
     main()
