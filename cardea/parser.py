@@ -3,59 +3,79 @@ from .nodes import *
 # cardea parser
 # made by las-r on github
 
-class parser:
-    def __init__(self, tokens):
-        self.tokens = tokens
-        self.pos = 0
-
+# parser
+def parse(tokens):
+    pos = 0
+    symbols = {}
+    
     # helpers
-    def peek(self):
-        if self.pos < len(self.tokens):
-            return self.tokens[self.pos]
-        return None
-    def consume(self, expectedtype=None):
-        token = self.peek()
-        if not token or (expectedtype and token.type != expectedtype):
-            posinfo = f"{token.line}:{token.column}" if token else "EOF"
-            raise Exception(f"Expected {expectedtype} at {posinfo}")
-        self.pos += 1
+    def peek(offset=0):
+        if pos + offset >= len(tokens): return None
+        return tokens[pos + offset]
+    
+    def consume(exptype=None):
+        nonlocal pos
+        token = peek()
+        if not token: raise RuntimeError("unexpected end of source")
+        if exptype and token[0] != exptype:
+            raise RuntimeError(f"expected {exptype}, got {token[0]} at {token[2]}:{token[3]}")
+        pos += 1
         return token
-
-    # expression parser
-    def parseexpr(self):
-        token = self.peek()
-        if token.type in ["str", "int", "flt"]:#type:ignore
-            t = self.consume()
-            return literalnode(t.type, t.value)
-        if token.type == "id":#type:ignore
-            t = self.consume()
-            return variablenode(t.value)
-        raise Exception(f"invalid expression: {token.value}")#type:ignore
-
-    # statement parser
-    def parsestatement(self):
-        token = self.peek()
+    
+    def parseexpr():
+        token = consume()
+        kind, val = token[0], token[1]
         
-        # literal
-        if token.type in ["str", "int", "flt", "bit"]:#type:ignore
-            t = self.consume()
-            return literalnode(t.type, t.value)
+        # inferences
+        if kind == "INTLIT": return LiteralNode(val, "int32")
+        if kind == "FLOATLIT": return LiteralNode(val, "float32")
+        if kind == "STR_LIT": return LiteralNode(val.strip('"'), "str")
+        if kind == "ID":
+            if val not in symbols:
+                raise RuntimeError(f"undefined variable: {val}")
+            return VariableRefNode(val, symbols[val])
+        raise RuntimeError(f"unexcepted expression: {val}")
+    
+    ast = []
+    while pos < len(tokens):
+        token = peek()
+        if token is not None:
+            kind, val = token[0], token[1]
         
-        # print
-        if token.type == "keyword" and token.value == "print":#type:ignore
-            self.consume()
-            expr = self.parseexpr() 
-            return printnode(expr)
-        
-        return None
-
-    # full parser
-    def parse(self):
-        body = []
-        while self.peek():
-            stmt = self.parsestatement()
-            if stmt:
-                body.append(stmt)
+        # var declarations
+        if val in ("const", "vola") or val in TYPEM:
+            const, vola = False, False
+            while peek() and peek()[1] in ("const", "vola"): #type:ignore
+                kw = consume()[1]
+                if kw == "const": const = True
+                if kw == "vola": vola = True
+            ton = consume("ID")[1]
+            if ton in TYPEM:
+                ftype = ton
+                name = consume("ID")[1]
             else:
-                raise Exception(f"unexpected token: {self.peek().value}")#type:ignore
-        return filenode(body)
+                ftype = None
+                name = ton
+            if peek() and peek()[0] == "ASSIGN": #type:ignore
+                consume("ASSIGN")
+                expr = parseexpr()
+                if ftype is None: ftype = expr.type
+            else:
+                if ftype is None:
+                    raise RuntimeError(f"variable '{name}' must have a type if no value is given")
+                expr = None
+            symbols[name] = {"type": ftype, "const": const}
+            ast.append(VariableNode(name, expr, ftype, const, vola))
+            
+        # reassignment
+        elif kind == "ID" and peek(1) and peek(1)[0] == "ASSIGN": #type:ignore
+            name = consume("ID")[1]
+            if name not in symbols:
+                raise RuntimeError(f"variable 'name' not declared")
+            if symbols[name]["const"]:
+                raise RuntimeError(f"cannot reassign constant '{name}'")
+            consume("ASSIGN")
+            expr = parseexpr()
+            if expr.type != symbols[name]["type"]:
+                raise RuntimeError(f"type mismatch: cannot assign {expr.type} to {symbols[name]["type"]}")
+            ast.append(AssignmentNode(name, expr))

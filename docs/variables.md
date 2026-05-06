@@ -15,10 +15,10 @@ Here are a few examples:
 str hello = "World"
 hello = 4            # throws an error; int cannot be assigned to str
 
-const num = 1        # inferred as integer
+const num = 1        # inferred as int32
 num = 2              # throws an error; var is immutable
 
-pi = 3.14159         # inferred as float
+pi = 3.14159         # inferred as float32
 
 str emptyvar
 anotheremptyvar      # throws an error; empty var cannot be defined w/o type

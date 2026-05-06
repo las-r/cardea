@@ -1,26 +1,33 @@
 # Types
 Every value in Cardea is statically typed, inferred or not.
 
-## Core Data Types
-| Type | Description | C Equivalent | Default Value |
-| :--- | :--- | :--- | :--- |
-| `int` | 64-bit signed integer | `int64_t` | `0` |
-| `flt` | 64-bit floating point | `double` | `0.0` |
-| `str` | UTF-8 String (Managed pointer) | `char*` | `NULL` / `""` |
-| `bit` | Boolean value (`true`/`false`) | `bool` | `false` |
-| `void` | Return type for non-returning functions | `void` | N/A |
-| `<T, S>` | Contiguous memory of type `T` and size `S` | `T*` | `NULL` |
+## Type List
+A star (⭐) means the type is generally considered the one of the default types for a value type group, and any variable with a type that must be inferred will be inferred to that type.
+### Integers
+- `int64`: Signed 64-bit integer
+- `int`, `int32`: Signed 32-bit integer ⭐
+- `int16`: Signed 16-bit integer
+- `int8`: Signed 8-bit integer
+- `uint64`: Unsigned 64-bit integer
+- `uint`, `uint32`: Unsigned 32-bit integer
+- `uint16`: Unsigned 16-bit integer
+- `uint8`: Unsigned 8-bit integer
 
-## Reserved Keywords
-### **Declaration & Flow**
-* `const`: Defines an immutable variable.
-* `return`: Exits a function and returns a value.
-* `if`: Conditional branch.
-* `else`: Alternative conditional branch.
-* `end`: Closes a multi-line function or logic block.
-* `while` / `for`: Loop constructs.
+### Floats
+- `half`, `float16`: 16-bit (half-precision) floating-point number
+- `float`, `float32`: 32-bit (single-precision) floating-point number ⭐
+- `double`, `float64`: 64-bit (double-precision) floating-point number
 
-### **Built-in Operations**
-* `print`: Output to stdout (handled by `runtime/core.c`).
-* `input`: Read from stdin.
-* `use`: Include a library
+### Booleans
+- `bool`: 8-bit boolean value (`true` or `false`) ⭐
+
+### Text
+- `char`: A single ASCII character
+- `str`: A sequence of characters ⭐
+
+### Special Returns
+- `void`: Indicates a function that returns no value
+
+### Type Qualifiers
+- `const`: Indicates a constant variable.
+- `vola`: Indicates a volatile variable.
